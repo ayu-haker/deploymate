@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/Architecture-7--Stage_DevSecOps-38bdf8?style=for-the-badge&logo=docker&logoColor=white" alt="DevSecOps Architecture" />
   <img src="https://img.shields.io/badge/Security-Trivy_Clean_(0_CVE)-10b981?style=for-the-badge&logo=aquasecurity&logoColor=white" alt="Security Clean" />
   <img src="https://img.shields.io/badge/GitOps-Argo_CD_Self--Healing-f97316?style=for-the-badge&logo=argo&logoColor=white" alt="ArgoCD GitOps" />
+  <img src="https://img.shields.io/badge/License-MIT_Strict_Protocol-yellow?style=for-the-badge&logo=open-source-initiative&logoColor=white" alt="MIT Strict License" />
   <img src="https://img.shields.io/badge/Mobile-Android_APK_v1.0.0-6366f1?style=for-the-badge&logo=android&logoColor=white" alt="Android Release" />
 </p>
 
@@ -161,44 +162,21 @@ god-project/
 ├── 🛡️ .github/workflows/ci.yml    <-- GitHub Actions DevSecOps Pipeline
 ├── 🐳 Dockerfile                   <-- Multi-Stage Production Dockerfile
 ├── 📦 app.js                       <-- Express Application with /metrics & /health
+├── 📄 LICENSE                      <-- MIT License & Strict Protocols Annex
 └── 📄 README.md                    <-- Consolidated Project Documentation
 ```
 
 ---
 
-## 💻 Local Setup & Development
+## 📄 License & Strict Protocols
 
-### 1. Prerequisites
-- Node.js `v20+` & `pnpm`
-- Android Studio (for native Android builds)
-- Android SDK (`platform-tools` with `adb`)
+This project is licensed under the [MIT License](LICENSE) with a **Strict Security & Deployment Protocols Annex**.
 
-### 2. Running Applications
-```bash
-# Clone the repository
-git clone https://github.com/ayu-haker/deploymate.git
-cd deploymate
-
-# Install workspace dependencies
-pnpm install
-
-# Run Main DeployMate Mobile App
-cd apps/mobile
-npx expo start
-
-# Run DeployMate Monitor Mobile App
-cd ../deploymate-monitor
-npx expo start
-```
-
-### 3. Android Studio Paths
-- **DeployMate SRE**: Open folder `D:\god-project\apps\mobile\android`
-- **DeployMate Monitor**: Open folder `D:\god-project\apps\deploymate-monitor\android`
-
----
-
-## 🔒 Security & Compliance Standard
-All container images and manifests comply with standard CIS Kubernetes Benchmarks and DevSecOps guidelines. Non-root user execution and Aqua Security Trivy vulnerability gates prevent insecure containers from reaching production clusters.
+### Strict Protocols Summary:
+1. **Zero-Tolerance Vulnerability Gate**: Mandatory Aqua Security Trivy scan blocking any `CRITICAL` or `HIGH` CVEs.
+2. **Non-Root Execution**: Strict `UID 10001` container privilege restriction.
+3. **GitOps Drift Control**: Mandatory Argo CD automated sync (`prune: true`, `selfHeal: true`).
+4. **Telemetry Integrity**: Mandatory Prometheus `/metrics` exposure and Liveness/Readiness probes.
 
 ---
 
