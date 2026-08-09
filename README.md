@@ -14,36 +14,98 @@
 
 **DeployMate** is an enterprise-grade, autonomous **Site Reliability Engineering (SRE) & DevSecOps Platform** designed to manage end-to-end containerized web application lifecycles, automated security gates, Kubernetes cluster GitOps self-healing, and real-time telemetry monitoring.
 
-The repository includes **two production mobile applications** and a complete **7-Stage DevSecOps Architecture Pipeline** built for `ayushman21/vertexlab-status-app`.
+The system features **two interconnected mobile applications**:
+1. **🚀 DeployMate SRE**: Active SRE Ops, AI Incident Remediation, Infrastructure Control & Automated Rollbacks.
+2. **🛡️ DeployMate Monitor**: DevSecOps Watchdog, 7-Stage Architecture Inspector, Trivy CVE Audits & ArgoCD Sync.
 
 ---
 
-## 📱 Mobile Applications Included
-
-| App Name | Package Name | Primary Role | APK Download Link |
-| :--- | :--- | :--- | :--- |
-| **🚀 DeployMate SRE** | `io.deploymate.app` | SRE Mission Control, Incident Remediation & AI Fixes | [📱 Download DeployMate APK](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-v1.0-release.apk) |
-| **🛡️ DeployMate Monitor** | `io.deploymate.monitor` | 7-Stage DevSecOps Watchdog, Trivy Audit & ArgoCD Sync | [📱 Download Monitor APK](https://github.com/ayu-haker/deploymate-monitor/releases/download/v1.0.0/DeployMate-Monitor-v1.0-release.apk) |
-
----
-
-## 📐 7-Stage End-to-End DevSecOps Workflow
+## 🔄 Dual-App System Interconnection & Ecosystem Workflow
 
 ```mermaid
 graph TD
-    A["💻 Source Code (app.js)"] --> B["🐳 Step 1: Multi-Stage Dockerfile"]
-    B --> C["⚙️ Step 3: CI Pipeline (GitHub Actions)"]
-    C --> D["🛡️ Step 4: Security Layer (Trivy CVE Audit)"]
-    D -- "PASS (0 Critical CVE)" --> E["📦 Step 2: Container Registry (Docker Hub)"]
-    E --> F["☸ Step 5: Kubernetes Cluster (Deployment & Service)"]
-    F --> G["🔄 Step 6: GitOps Controller (Argo CD Sync)"]
-    G --> H["📊 Step 7: Telemetry & Monitoring (Prometheus + Grafana)"]
-    H --> I["📱 DeployMate & DeployMate Monitor Mobile Apps"]
+    subgraph "🐳 Kubernetes & CI/CD Pipeline (Target: ayushman21/vertexlab-status-app)"
+        A["💻 Developer Commit"] --> B["⚙️ GitHub Actions CI"]
+        B --> C["🛡️ Trivy Security Scan Gate"]
+        C -- "Clean (0 CVE)" --> D["📦 Docker Hub Registry"]
+        D --> E["☸ Kubernetes Cluster (3 Pod Replicas)"]
+        E --> F["🔄 Argo CD GitOps Sync"]
+        E --> G["📊 Prometheus Telemetry (/metrics)"]
+    end
+
+    subgraph "⚙️ Central Control Engine (apps/api & Worker)"
+        G --> H["📡 NestJS Telemetry & Event Hub"]
+        E --> H
+        C --> H
+        F --> H
+    end
+
+    subgraph "📱 Interconnected Mobile App Layer"
+        H <== "Real-time Telemetry & Pod Metrics" ==> I["🚀 DeployMate SRE App (apps/mobile)"]
+        H <== "7-Stage Pipeline & Security Status" ==> J["🛡️ DeployMate Monitor (apps/deploymate-monitor)"]
+        
+        I -- "1-Tap AI Fix & K8s Rollout" --> E
+        J -- "1-Tap Instant Trivy Audit & ArgoCD Sync" --> F
+        
+        I <== "Bi-Directional Event Sync (Incidents & Audits)" ==> J
+    end
 ```
 
 ---
 
-## 🛠️ Step-by-Step Technical Implementation Details
+## 📱 Mobile Applications Ecosystem
+
+| App Name | Package Name | Primary Role | Interconnection Function | APK Download Link |
+| :--- | :--- | :--- | :--- | :--- |
+| **🚀 DeployMate SRE** | `io.deploymate.app` | SRE Mission Control & AI Incident Remediation | Triggers AI root-cause analysis, auto-patches broken code, and manages Kubernetes rollouts. | [📱 Download DeployMate APK](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-v1.0-release.apk) |
+| **🛡️ DeployMate Monitor** | `io.deploymate.monitor` | 7-Stage DevSecOps Watchdog & Telemetry | Audits all 7 pipeline stages, executes Trivy security gates, and forces ArgoCD GitOps cluster self-healing. | [📱 Download Monitor APK](https://github.com/ayu-haker/deploymate-monitor/releases/download/v1.0.0/DeployMate-Monitor-v1.0-release.apk) |
+
+---
+
+## 🔄 1. DeployMate SRE Operational Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant K8s as Kubernetes Cluster
+    participant Api as NestJS API Engine
+    participant SRE as 🚀 DeployMate SRE App
+    participant AI as 🧠 AI Remediation Engine
+    participant Git as GitHub Repository
+
+    K8s->>Api: High CPU / Memory Crash Loop Alert
+    Api->>SRE: Push Real-Time Incident Notification
+    SRE->>AI: Trigger "Diagnose & Fix Incident"
+    AI-->>SRE: Generate Patch & Root-Cause Fix
+    SRE->>Git: Auto-commit Code/Manifest Patch
+    SRE->>K8s: Trigger Zero-Downtime Rolling Update
+    K8s-->>SRE: Status: 3/3 Replicas Healthy
+```
+
+---
+
+## 🛡️ 2. DeployMate Monitor Watchdog Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Dev as DevSecOps Pipeline
+    participant Mon as 🛡️ DeployMate Monitor
+    participant Trivy as Aqua Security Trivy
+    participant Argo as Argo CD GitOps
+    participant SRE as 🚀 DeployMate SRE App
+
+    Dev->>Mon: Stage Update (Dockerfile ➔ Registry ➔ K8s)
+    Mon->>Trivy: Trigger Instant Vulnerability Audit
+    Trivy-->>Mon: Audit Result: 0 Critical / 0 High CVEs
+    Mon->>Argo: Trigger Forced GitOps Sync & Self-Heal
+    Argo-->>Mon: Cluster State Synced with Git HEAD
+    Mon->>SRE: Sync Security Clearance Badge (All 7 Stages Passed)
+```
+
+---
+
+## 🛠️ 7-Stage Architecture Specifications
 
 ### 1. 🐳 Containerization (`Dockerfile`)
 - **Base Image**: Multi-stage `node:20-alpine` (Minimal attack surface, size reduced to 128MB).
@@ -52,7 +114,7 @@ graph TD
 
 ### 2. 📦 Container Registry (Docker Hub CLI Commands)
 - **Target Repository**: `ayushman21/vertexlab-status-app`
-- **Cli Commands**:
+- **Commands**:
   ```bash
   docker build -t ayushman21/vertexlab-status-app:v1.0.0 .
   docker push ayushman21/vertexlab-status-app:v1.0.0
@@ -77,11 +139,11 @@ graph TD
 
 ### 7. 📊 Monitoring (`servicemonitor.yaml` & `grafana-dashboard.json`)
 - Prometheus `ServiceMonitor` scraping `/metrics` endpoint powered by `prom-client` every 15 seconds.
-- Pre-configured Grafana telemetry dashboard monitoring HTTP request rate, CPU/Memory utilization, and active pod pod metrics.
+- Pre-configured Grafana telemetry dashboard monitoring HTTP request rate, CPU/Memory utilization, and active pod metrics.
 
 ---
 
-## 📂 Repository File Structure
+## 📂 Monorepo Repository Structure
 
 ```text
 god-project/
