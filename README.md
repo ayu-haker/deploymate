@@ -2,6 +2,9 @@
 
 > **“One mobile app to deploy, monitor, debug and fix your applications — across Kubernetes, Vercel and Netlify.”**
 
+[![Download Android APK](https://img.shields.io/badge/📱_Download_Android_APK-v1.0.0-38bdf8?style=for-the-badge&logo=android)](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-v1.0-release.apk)
+[![GitHub Release](https://img.shields.io/github/v/release/ayu-haker/deploymate?style=for-the-badge&color=34d399)](https://github.com/ayu-haker/deploymate/releases/tag/v1.0.0)
+
 DeployMate is a production-grade, mobile-first deployment platform designed for indie developers, small teams, and DevOps engineers.
 
 ---
