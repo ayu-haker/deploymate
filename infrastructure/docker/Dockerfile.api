@@ -1,0 +1,39 @@
+# Multi-stage production Dockerfile for DeployMate NestJS API Gateway
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy root and package configuration files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY prisma ./prisma
+COPY packages ./packages
+COPY ai ./ai
+COPY apps/api ./apps/api
+
+# Install dependencies and build
+RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm db:generate
+RUN pnpm --filter @deploymate/api build
+
+# Production Runner Stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+
+USER nestjs
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["node", "dist/main.js"]

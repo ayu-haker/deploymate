@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  OWNER
+}
+
+enum ProviderType {
+  KUBERNETES
+  VERCEL
+  NETLIFY
+}
+
+enum DeploymentStatus {
+  QUEUED
+  BUILDING
+  DEPLOYING
+  RUNNING
+  FAILED
+  CANCELLED
+  ROLLING_BACK
+  ROLLED_BACK
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ActionType {
+  UPDATE_IMAGE
+  UPDATE_ENVIRONMENT
+  RESTART_DEPLOYMENT
+  ROLLBACK
+  UPDATE_REPLICAS
+  UPDATE_RESOURCES
+  UPDATE_DOCKERFILE
+  UPDATE_DEPENDENCY
+}
+
+enum FixStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  APPLYING
+  APPLIED
+  FAILED
+}
+
+model User {
+  id                String              @id @default(uuid())
+  email             String              @unique
+  name              String?
+  passwordHash      String
+  role              Role                @default(USER)
+  avatarUrl         String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  githubConnection  GitHubConnection?
+  providerConnections ProviderConnection[]
+  projects          Project[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  aiFixes           AIFix[]
+
+  @@map("users")
+}
+
+model GitHubConnection {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubUserId String
+  username     String
+  accessToken  String   // Encrypted
+  refreshToken String?  // Encrypted
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("github_connections")
+}
+
+model ProviderConnection {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     ProviderType
+  name         String
+  credentials  String       // Encrypted JSON (e.g. Vercel token, Kubeconfig, Netlify token)
+  isDefault    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  projects     Project[]
+
+  @@map("provider_connections")
+}
+
+model Project {
+  id                   String               @id @default(uuid())
+  name                 String
+  slug                 String               @unique
+  repository           String               // e.g. owner/repo
+  branch               String               @default("main")
+  provider             ProviderType
+  providerConnectionId String?
+  providerConnection   ProviderConnection?  @relation(fields: [providerConnectionId], references: [id])
+  userId               String
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  environment          String               @default("production")
+  framework            String?
+  buildCmd             String?
+  outputDir            String?
+  dockerfile           String?              @default("Dockerfile")
+  k8sNamespace         String?
+  liveUrl              String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  envVars              EnvironmentVariable[]
+  deployments          Deployment[]
+
+  @@map("projects")
+}
+
+model EnvironmentVariable {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key       String
+  value     String   // Encrypted at rest
+  isSecret  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, key])
+  @@map("environment_variables")
+}
+
+model Deployment {
+  id          String           @id @default(uuid())
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  provider    ProviderType
+  status      DeploymentStatus @default(QUEUED)
+  commitSha   String
+  commitMsg   String?
+  branch      String
+  version     String
+  url         String?
+  error       String?
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  logs        DeploymentLog[]
+  events      DeploymentEvent[]
+  aiAnalyses  AIAnalysis[]
+  aiFixes     AIFix[]
+
+  @@map("deployments")
+}
+
+model DeploymentLog {
+  id           String     @id @default(uuid())
+  deploymentId String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  level        String     @default("INFO") // INFO, WARN, ERROR, DEBUG
+  message      String
+  step         String     @default("BUILD") // PREPARE, BUILD, SCAN, DEPLOY, MONITOR
+  timestamp    DateTime   @default(now())
+
+  @@map("deployment_logs")
+}
+
+model DeploymentEvent {
+  id           String     @id @default(uuid())
+  deploymentId String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  event        String
+  details      String?
+  timestamp    DateTime   @default(now())
+
+  @@map("deployment_events")
+}
+
+model AIAnalysis {
+  id           String     @id @default(uuid())
+  deploymentId String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  severity     Severity
+  problem      String
+  rootCause    String
+  confidence   Float
+  suggestedFix String
+  action       ActionType
+  payload      String?    // JSON stringified details/parameters for action
+  rawOutput    String?
+  createdAt    DateTime   @default(now())
+
+  fixes        AIFix[]
+
+  @@map("ai_analyses")
+}
+
+model AIFix {
+  id           String     @id @default(uuid())
+  deploymentId String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  analysisId   String
+  analysis     AIAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id])
+  status       FixStatus  @default(PROPOSED)
+  diff         String     // Unified Git diff or action payload preview
+  action       ActionType
+  branchName   String?
+  prUrl        String?
+  error        String?
+  createdAt    DateTime   @default(now())
+  approvedAt   DateTime?
+
+  @@map("ai_fixes")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  resource  String
+  details   String   // JSON metadata
+  ipAddress String?
+  timestamp DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   // DEPLOYMENT_SUCCESS, DEPLOYMENT_FAILED, AI_FIX_PROPOSED, ROLLBACK_DONE
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}

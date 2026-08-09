@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeployMate Mobile App - Interactive Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #030712; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    
+    .phone-frame {
+      width: 390px;
+      height: 820px;
+      background-color: #090d16;
+      border-radius: 48px;
+      border: 12px solid #1e293b;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(56, 189, 248, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .notch {
+      width: 150px;
+      height: 28px;
+      background-color: #1e293b;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+      margin: 0 auto;
+      z-index: 10;
+    }
+
+    .app-header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #0f172a;
+      border-bottom: 1px solid #1e293b;
+    }
+    .brand { font-size: 20px; font-weight: 900; color: #f8fafc; }
+    .brand span { color: #38bdf8; }
+
+    .content-area { flex: 1; overflow-y: auto; padding: 16px; }
+
+    .summary-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      margin-bottom: 20px;
+    }
+    .summary-title { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+    .summary-num { font-size: 38px; font-weight: 900; color: #f8fafc; margin: 6px 0; }
+    
+    .stats-row { display: flex; gap: 8px; justify-content: space-between; margin-top: 10px; }
+    .badge { display: flex; align-items: center; gap: 6px; background-color: #090d16; padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid #334155; }
+    .badge.green { border-color: #10b981; color: #10b981; }
+    .badge.yellow { border-color: #f59e0b; color: #f59e0b; }
+    .badge.red { border-color: #ef4444; color: #ef4444; }
+
+    .section-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    .deploy-card {
+      background-color: #0f172a;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .deploy-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+    .deploy-card.failed { border-color: #ef4444; background: linear-gradient(180deg, #0f172a 0%, #1a0f18 100%); }
+
+    .card-top { display: flex; justify-content: space-between; align-items: center; }
+    .card-name { font-size: 16px; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
+    .card-provider { background-color: #1e293b; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px; }
+
+    .card-bot { display: flex; justify-content: space-between; margin-top: 12px; pt-8px; border-top: 1px solid #1e293b; padding-top: 10px; font-size: 12px; font-family: 'Fira Code', monospace; color: #94a3b8; }
+
+    .ai-btn {
+      width: 100%;
+      background: linear-gradient(90deg, #7c3aed 0%, #6d28d9 100%);
+      color: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 800;
+      font-size: 13px;
+      margin-top: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+    .ai-btn:hover { opacity: 0.9; }
+
+    /* Modal / Screen views */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .diff-box {
+      background-color: #030712;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+    .diff-add { color: #10b981; background-color: rgba(16, 185, 129, 0.1); display: block; padding: 0 4px; }
+    .diff-rem { color: #ef4444; background-color: rgba(239, 68, 68, 0.1); display: block; padding: 0 4px; }
+
+    .bottom-nav {
+      height: 64px;
+      background-color: #0f172a;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #64748b; font-size: 10px; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .nav-item.active { color: #38bdf8; }
+
+    .action-row { display: flex; gap: 10px; margin-top: 16px; }
+    .btn-approve { flex: 2; background-color: #10b981; color: #090d16; padding: 14px; border-radius: 8px; border: none; font-weight: 900; cursor: pointer; }
+    .btn-reject { flex: 1; background-color: #1e293b; color: #94a3b8; padding: 14px; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="notch"></div>
+
+  <div class="app-header">
+    <div class="brand">🚀 Deploy<span>Mate</span></div>
+    <div style="font-size: 11px; font-weight: 800; background: #1e293b; color: #10b981; padding: 4px 8px; border-radius: 12px;">ONLINE</div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div id="screen-dashboard" class="content-area screen active">
+    <div class="summary-card">
+      <div class="summary-title">Managed Applications</div>
+      <div class="summary-num">12</div>
+      <div class="stats-row">
+        <div class="badge green">🟢 8 Running</div>
+        <div class="badge yellow">🟡 2 Building</div>
+        <div class="badge red">🔴 2 Failed</div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span>Recent Deployments</span>
+      <span style="font-size: 11px; color: #38bdf8; cursor: pointer;">View All</span>
+    </div>
+
+    <div class="deploy-card" onclick="showScreen('project')">
+      <div class="card-top">
+        <div class="card-name">🟢 Portfolio API</div>
+        <div class="card-provider">☸ Kubernetes</div>
+      </div>
+      <div class="card-bot">
+        <span>v1.4.2 (main)</span>
+        <span style="color: #10b981;">RUNNING</span>
+      </div>
+    </div>
+
+    <div class="deploy-card" onclick="showScreen('project')">
+      <div class="card-top">
+        <div class="card-name">🟢 Landing Page</div>
+        <div class="card-provider">▲ Vercel</div>
+      </div>
+      <div class="card-bot">
+        <span>v2.1.0 (main)</span>
+        <span style="color: #10b981;">RUNNING</span>
+      </div>
+    </div>
+
+    <div class="deploy-card failed">
+      <div class="card-top">
+        <div class="card-name">🔴 Backend Microservice</div>
+        <div class="card-provider">☸ Kubernetes</div>
+      </div>
+      <div class="card-bot">
+        <span>v2.4.1 (sha_83f92d)</span>
+        <span style="color: #ef4444;">CrashLoopBackOff</span>
+      </div>
+      <button class="ai-btn" onclick="showScreen('ai-fix')">🤖 Fix with AI (96% Confidence)</button>
+    </div>
+  </div>
+
+  <!-- PROJECT DETAIL SCREEN -->
+  <div id="screen-project" class="content-area screen">
+    <div style="font-size: 11px; color: #38bdf8; font-weight: 700; margin-bottom: 8px; cursor: pointer;" onclick="showScreen('dashboard')">← Back to Dashboard</div>
+    <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 12px;">Backend Microservice</h2>
+    
+    <div class="summary-card" style="margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span style="color: #94a3b8; font-size: 12px;">Platform:</span>
+        <span style="color: #38bdf8; font-weight: 800;">☸ Kubernetes</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span style="color: #94a3b8; font-size: 12px;">Live Cluster Endpoint:</span>
+        <span style="font-family: monospace; font-size: 11px; color: #10b981;">backend.default.svc.cluster.local</span>
+      </div>
+    </div>
+
+    <div class="section-title">Pod Metrics</div>
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <div style="flex: 1; background: #0f172a; border: 1px solid #1e293b; padding: 12px; border-radius: 10px;">
+        <div style="font-size: 11px; color: #94a3b8;">CPU Limit</div>
+        <div style="font-size: 20px; font-weight: 900; color: #38bdf8; margin: 4px 0;">21%</div>
+        <div style="height: 4px; background: #334155; border-radius: 2px;"><div style="width: 21%; height: 100%; background: #38bdf8;"></div></div>
+      </div>
+      <div style="flex: 1; background: #0f172a; border: 1px solid #1e293b; padding: 12px; border-radius: 10px;">
+        <div style="font-size: 11px; color: #94a3b8;">Memory Limit</div>
+        <div style="font-size: 20px; font-weight: 900; color: #818cf8; margin: 4px 0;">43%</div>
+        <div style="height: 4px; background: #334155; border-radius: 2px;"><div style="width: 43%; height: 100%; background: #818cf8;"></div></div>
+      </div>
+    </div>
+
+    <button style="width: 100%; background: #38bdf8; color: #090d16; padding: 14px; border-radius: 8px; border: none; font-weight: 900; cursor: pointer;" onclick="alert('Deployment job queued in BullMQ worker queue!')">🚀 Trigger Instant Deploy</button>
+  </div>
+
+  <!-- AI FIX SCREEN -->
+  <div id="screen-ai-fix" class="content-area screen">
+    <div style="font-size: 11px; color: #38bdf8; font-weight: 700; margin-bottom: 8px; cursor: pointer;" onclick="showScreen('dashboard')">← Back to Dashboard</div>
+    
+    <div style="background: #180e15; border: 1px solid #ef4444; padding: 14px; border-radius: 12px; margin-bottom: 16px;">
+      <div style="color: #ef4444; font-weight: 800;">🔴 CrashLoopBackOff</div>
+      <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Deployment #183</div>
+    </div>
+
+    <div style="background: #0f172a; border: 1px solid #1e293b; padding: 16px; border-radius: 12px;">
+      <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 8px;">🤖 AI Root Cause Analysis</h3>
+      <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Application container failed to start because required <code style="color: #38bdf8;">DATABASE_URL</code> environment variable is missing in deployment config.</p>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 14px; padding-top: 10px; border-top: 1px solid #1e293b;">
+        <span style="font-size: 11px; color: #94a3b8;">Confidence: <strong style="color: #10b981;">96%</strong></span>
+        <span style="font-size: 11px; color: #94a3b8;">Action: <strong style="color: #f59e0b;">UPDATE_ENVIRONMENT</strong></span>
+      </div>
+
+      <div class="diff-box">
+        <span style="color: #64748b;">--- a/deployment.yaml</span><br>
+        <span style="color: #64748b;">+++ b/deployment.yaml</span><br>
+        <span> env:</span><br>
+        <span>   - name: PORT</span><br>
+        <span class="diff-add">+  - name: DATABASE_URL</span><br>
+        <span class="diff-add">+    value: "postgresql://usr:pwd@host:5432/db"</span>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-reject" onclick="showScreen('dashboard')">Reject</button>
+        <button class="btn-approve" onclick="alert('Fix approved! Git pull request created and redeploy queued.'); showScreen('dashboard');">Approve & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showScreen('dashboard')">
+      <div style="font-size: 16px;">📊</div>
+      <span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showScreen('project')">
+      <div style="font-size: 16px;">⚡</div>
+      <span>Projects</span>
+    </div>
+    <div class="nav-item" onclick="showScreen('ai-fix')">
+      <div style="font-size: 16px;">🤖</div>
+      <span>AI Fix</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + screenId).classList.add('active');
+    
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (screenId === 'dashboard') document.querySelectorAll('.nav-item')[0].classList.add('active');
+    if (screenId === 'project') document.querySelectorAll('.nav-item')[1].classList.add('active');
+    if (screenId === 'ai-fix') document.querySelectorAll('.nav-item')[2].classList.add('active');
+  }
+</script>
+</body>
+</html>

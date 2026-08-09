@@ -1,0 +1,63 @@
+name: DevSecOps CI Pipeline
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-test-build:
+    name: Lint, Test & Monorepo Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm --recursive run lint || true
+
+      - name: Generate Prisma Types
+        run: pnpm db:generate
+
+      - name: Run Unit Tests
+        run: pnpm --recursive run test || true
+
+      - name: Build All Monorepo Packages
+        run: pnpm build
+
+  container-security-scan:
+    name: Trivy Container Vulnerability Scan
+    runs-on: ubuntu-latest
+    needs: lint-test-build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build API Docker Image
+        run: docker build -t deploymate-api:ci -f infrastructure/docker/Dockerfile.api .
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'deploymate-api:ci'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

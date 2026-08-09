@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: deploymate-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: deploymate
+      POSTGRES_PASSWORD: deploymate_secret
+      POSTGRES_DB: deploymate
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U deploymate']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: deploymate-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: deploymate-ollama
+    restart: always
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollamadata:/root/.ollama
+
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: deploymate-api
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: 'postgresql://deploymate:deploymate_secret@postgres:5432/deploymate?schema=public'
+      REDIS_URL: 'redis://redis:6379'
+      JWT_SECRET: 'deploymate_super_secret_jwt_access_key_change_in_prod'
+      JWT_REFRESH_SECRET: 'deploymate_super_secret_jwt_refresh_key_change_in_prod'
+      ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef'
+      OLLAMA_URL: 'http://ollama:11434'
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    container_name: deploymate-worker
+    restart: always
+    environment:
+      DATABASE_URL: 'postgresql://deploymate:deploymate_secret@postgres:5432/deploymate?schema=public'
+      REDIS_URL: 'redis://redis:6379'
+      OLLAMA_URL: 'http://ollama:11434'
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: deploymate-prometheus
+    restart: always
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: deploymate-grafana
+    restart: always
+    ports:
+      - '3001:3000'
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+volumes:
+  pgdata:
+  redisdata:
+  ollamadata:
