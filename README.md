@@ -21,6 +21,18 @@ The system features **two interconnected mobile applications**:
 
 ---
 
+## 📥 Direct APK Downloads
+
+[![DeployMate SRE APK](https://img.shields.io/badge/📱_Download_DeployMate_SRE_APK-v1.0.0-6366f1?style=for-the-badge&logo=android)](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-v1.0-release.apk)
+[![DeployMate Monitor APK](https://img.shields.io/badge/🛡️_Download_DeployMate_Monitor_APK-v1.0.0-38bdf8?style=for-the-badge&logo=android)](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-Monitor-v1.0-release.apk)
+
+| App Name | Package Name | Primary Role | APK Direct Download Link |
+| :--- | :--- | :--- | :--- |
+| **🚀 DeployMate SRE** | `io.deploymate.app` | SRE Mission Control & AI Incident Remediation | [📱 Download DeployMate-v1.0-release.apk](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-v1.0-release.apk) |
+| **🛡️ DeployMate Monitor** | `io.deploymate.monitor` | 7-Stage DevSecOps Watchdog & Telemetry | [🛡️ Download DeployMate-Monitor-v1.0-release.apk](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-Monitor-v1.0-release.apk) |
+
+---
+
 ## 🔄 Dual-App System Interconnection & Ecosystem Workflow
 
 ```mermaid
@@ -51,15 +63,6 @@ graph TD
         I <== "Bi-Directional Event Sync (Incidents & Audits)" ==> J
     end
 ```
-
----
-
-## 📱 Mobile Applications Ecosystem
-
-| App Name | Package Name | Primary Role | Interconnection Function | APK Download Link |
-| :--- | :--- | :--- | :--- | :--- |
-| **🚀 DeployMate SRE** | `io.deploymate.app` | SRE Mission Control & AI Incident Remediation | Triggers AI root-cause analysis, auto-patches broken code, and manages Kubernetes rollouts. | [📱 Download DeployMate APK](https://github.com/ayu-haker/deploymate/releases/download/v1.0.0/DeployMate-v1.0-release.apk) |
-| **🛡️ DeployMate Monitor** | `io.deploymate.monitor` | 7-Stage DevSecOps Watchdog & Telemetry | Audits all 7 pipeline stages, executes Trivy security gates, and forces ArgoCD GitOps cluster self-healing. | [📱 Download Monitor APK](https://github.com/ayu-haker/deploymate-monitor/releases/download/v1.0.0/DeployMate-Monitor-v1.0-release.apk) |
 
 ---
 
