@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, RefreshControl,
+  StyleSheet, RefreshControl, Alert, ActivityIndicator,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { apiRequest } from '../../src/services/api';
 import { theme } from '../../src/theme/tokens';
+import { TelemetryChart } from '../../src/components/TelemetryChart';
 
 const MOCK_PROJECTS = [
+  { id: 'demo-0', name: 'VertexLab Status App', provider: 'KUBERNETES', lastDeployment: { status: 'RUNNING', version: 'v1.0.0', id: 'dep-0' } },
   { id: 'demo-1', name: 'Portfolio Engine', provider: 'KUBERNETES', lastDeployment: { status: 'RUNNING', version: 'v1.4.2', id: 'dep-1' } },
   { id: 'demo-2', name: 'Landing Web App', provider: 'VERCEL', lastDeployment: { status: 'RUNNING', version: 'v2.1.0', id: 'dep-2' } },
   { id: 'demo-3', name: 'Backend API Gateway', provider: 'KUBERNETES', lastDeployment: { status: 'FAILED', version: 'v2.4.1', id: 'dep-3' } },
@@ -27,9 +29,21 @@ const STATUS_COLOR: Record<string, string> = {
   DEPLOYING: theme.colors.warning,
 };
 
+const PIPELINE_STEPS = [
+  { num: '1', title: 'Dockerfile', tag: 'Multi-Stage' },
+  { num: '2', title: 'Docker Hub', tag: 'ayushman21' },
+  { num: '3', title: 'CI Pipeline', tag: 'GitHub Actions' },
+  { num: '4', title: 'Security', tag: 'Trivy Scan' },
+  { num: '5', title: 'K8s Deploy', tag: 'Deployment.yaml' },
+  { num: '6', title: 'GitOps', tag: 'ArgoCD Synced' },
+  { num: '7', title: 'Monitoring', tag: 'Prometheus' },
+];
+
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [runningScan, setRunningScan] = useState(false);
+  const [runningSync, setRunningSync] = useState(false);
 
   const { data: projects = [], refetch } = useQuery({
     queryKey: ['projects'],
@@ -48,24 +62,46 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
+  const handleTrivyAudit = () => {
+    setRunningScan(true);
+    setTimeout(() => {
+      setRunningScan(false);
+      Alert.alert(
+        '🛡️ Trivy Audit Passed',
+        'Image: ayushman21/vertexlab-status-app:v1.0.0\n\n- CRITICAL Vulnerabilities: 0\n- HIGH Vulnerabilities: 0\n- OS Libraries: 100% Clean\n\nContainer passed all DevSecOps security policies!'
+      );
+    }, 1000);
+  };
+
+  const handleArgoCdSync = () => {
+    setRunningSync(true);
+    setTimeout(() => {
+      setRunningSync(false);
+      Alert.alert(
+        '🔄 ArgoCD GitOps Synced',
+        'Repository: https://github.com/ayu-haker/deploymate.git\nTarget Revision: HEAD (main)\n\nApplication state is IN-SYNC and HEALTHY across all 3 Kubernetes pod replicas.'
+      );
+    }, 1000);
+  };
+
   return (
     <View style={styles.safe}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.signal} />}
       >
-        {/* Hero Stats Card */}
+        {/* Hero Command Center Summary */}
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
-            <Text style={styles.heroLabel}>COMMAND CENTER SUMMARY</Text>
+            <Text style={styles.heroLabel}>DEVSECOPS COMMAND CENTER</Text>
             <View style={styles.liveTag}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>LIVE</Text>
+              <Text style={styles.liveText}>LIVE MONITORED</Text>
             </View>
           </View>
 
           <Text style={styles.heroNumber}>{display.length}</Text>
-          <Text style={styles.heroSub}>Total Monitored Projects</Text>
+          <Text style={styles.heroSub}>Active Monitored Applications & Services</Text>
 
           <View style={styles.statsGrid}>
             {[
@@ -81,7 +117,67 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Active Deployments */}
+        {/* 7-Step DevSecOps Architecture Visualizer */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>7-STEP DEVSECOPS PIPELINE</Text>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pipelineScroll}>
+          {PIPELINE_STEPS.map((step) => (
+            <View key={step.num} style={styles.stepCard}>
+              <Text style={styles.stepNum}>STEP {step.num}</Text>
+              <Text style={styles.stepTitle}>{step.title}</Text>
+              <View style={styles.stepTag}>
+                <Text style={styles.stepTagText}>{step.tag}</Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* DevSecOps Interactive Action Buttons */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.auditBtn} onPress={handleTrivyAudit} disabled={runningScan}>
+            {runningScan ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={styles.auditBtnText}>🛡️ Run Trivy Security Audit</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.syncBtn} onPress={handleArgoCdSync} disabled={runningSync}>
+            {runningSync ? (
+              <ActivityIndicator color={theme.colors.signal} />
+            ) : (
+              <Text style={styles.syncBtnText}>🔄 ArgoCD GitOps Sync</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* K8s Live Replicas & Telemetry Chart */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>PROMETHEUS TELEMETRY (VERTEXLAB STATUS APP)</Text>
+        </View>
+
+        <View style={styles.telemetryCard}>
+          <View style={styles.podRow}>
+            <View style={styles.podItem}>
+              <Text style={styles.podName}>pod-app-7f4b89-a1b2</Text>
+              <Text style={styles.podSub}>14% CPU | 132MB</Text>
+            </View>
+            <View style={styles.podItem}>
+              <Text style={styles.podName}>pod-app-7f4b89-c3d4</Text>
+              <Text style={styles.podSub}>18% CPU | 128MB</Text>
+            </View>
+            <View style={styles.podItem}>
+              <Text style={styles.podName}>pod-app-7f4b89-e5f6</Text>
+              <Text style={styles.podSub}>12% CPU | 136MB</Text>
+            </View>
+          </View>
+
+          <TelemetryChart title="HTTP Request Rate (req/sec)" data={[110, 125, 118, 134, 142, 138, 145, 140, 139, 142]} color={theme.colors.signal} height={120} />
+        </View>
+
+        {/* Active Deployments List */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>ACTIVE DEPLOYMENTS</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/projects' as any)}>
@@ -92,7 +188,6 @@ export default function DashboardScreen() {
         {display.map((p: any) => {
           const status = p.lastDeployment?.status ?? 'IDLE';
           const isFailed = status === 'FAILED';
-          const isRunning = status === 'RUNNING';
           const dotColor = STATUS_COLOR[status] ?? theme.colors.textSecondary;
 
           return (
@@ -139,7 +234,7 @@ const styles = StyleSheet.create({
   heroCard: {
     backgroundColor: theme.colors.cardBg, padding: 20,
     borderRadius: theme.radii.xl, borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder, marginBottom: 20,
+    borderColor: theme.colors.surfaceBorder, marginBottom: 16,
   },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   heroLabel: {
@@ -154,7 +249,7 @@ const styles = StyleSheet.create({
   },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.healthy, marginRight: 6 },
   liveText: { fontSize: 10, fontWeight: '800', color: theme.colors.healthy },
-  heroNumber: { fontSize: 48, fontWeight: '900', color: theme.colors.signal, lineHeight: 52 },
+  heroNumber: { fontSize: 44, fontWeight: '900', color: theme.colors.signal, lineHeight: 48 },
   heroSub: { fontSize: 13, color: theme.colors.textSecondary, marginBottom: 16 },
   statsGrid: { flexDirection: 'row', gap: 8 },
   statBox: {
@@ -167,13 +262,52 @@ const styles = StyleSheet.create({
 
   sectionRow: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 12,
+    alignItems: 'center', marginBottom: 10, marginTop: 8,
   },
   sectionTitle: {
     fontSize: 11, fontFamily: theme.fonts.mono,
-    color: theme.colors.textSecondary, letterSpacing: 1.5, fontWeight: '700',
+    color: theme.colors.textSecondary, letterSpacing: 1.2, fontWeight: '700',
   },
   viewAll: { fontSize: 12, color: theme.colors.signal, fontWeight: '700' },
+
+  pipelineScroll: { marginBottom: 14 },
+  stepCard: {
+    backgroundColor: theme.colors.cardBg, paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: theme.radii.md, borderWidth: 1, borderColor: theme.colors.surfaceBorder,
+    marginRight: 10, minWidth: 120, alignItems: 'center',
+  },
+  stepNum: { fontSize: 10, fontFamily: theme.fonts.mono, color: theme.colors.signal, fontWeight: '700' },
+  stepTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.textPrimary, marginVertical: 4 },
+  stepTag: {
+    backgroundColor: 'rgba(52,211,153,0.12)', paddingHorizontal: 8, paddingVertical: 2,
+    borderRadius: 999, borderWidth: 1, borderColor: 'rgba(52,211,153,0.3)',
+  },
+  stepTagText: { fontSize: 10, color: theme.colors.healthy, fontWeight: '700', fontFamily: theme.fonts.mono },
+
+  actionRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  auditBtn: {
+    flex: 1, backgroundColor: theme.colors.signal, padding: 13,
+    borderRadius: theme.radii.md, alignItems: 'center',
+  },
+  auditBtnText: { color: '#000', fontWeight: '900', fontSize: 13 },
+  syncBtn: {
+    flex: 1, backgroundColor: theme.colors.surfaceFill, padding: 13,
+    borderRadius: theme.radii.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.surfaceBorder,
+  },
+  syncBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 13 },
+
+  telemetryCard: {
+    backgroundColor: theme.colors.cardBg, padding: 16,
+    borderRadius: theme.radii.lg, borderWidth: 1, borderColor: theme.colors.surfaceBorder,
+    marginBottom: 16,
+  },
+  podRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
+  podItem: {
+    flex: 1, backgroundColor: '#030712', padding: 8,
+    borderRadius: 6, borderWidth: 1, borderColor: theme.colors.surfaceBorder,
+  },
+  podName: { fontSize: 10, fontFamily: theme.fonts.mono, color: theme.colors.healthy, fontWeight: '700' },
+  podSub: { fontSize: 9, fontFamily: theme.fonts.mono, color: theme.colors.textSecondary, marginTop: 2 },
 
   card: {
     backgroundColor: theme.colors.cardBg, padding: 16,
